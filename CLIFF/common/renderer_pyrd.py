@@ -16,13 +16,13 @@ import cv2
 
 
 class Renderer(object):
-
-    def __init__(self, focal_length=600, img_w=512, img_h=512, faces=None,
-                 same_mesh_color=False):
-        os.environ['PYOPENGL_PLATFORM'] = 'egl'
-        self.renderer = pyrender.OffscreenRenderer(viewport_width=img_w,
-                                                   viewport_height=img_h,
-                                                   point_size=1.0)
+    def __init__(
+        self, focal_length=600, img_w=512, img_h=512, faces=None, same_mesh_color=False
+    ):
+        os.environ["PYOPENGL_PLATFORM"] = "egl"
+        self.renderer = pyrender.OffscreenRenderer(
+            viewport_width=img_w, viewport_height=img_h, point_size=1.0
+        )
         self.camera_center = [img_w // 2, img_h // 2]
         self.focal_length = focal_length
         self.faces = faces
@@ -32,8 +32,12 @@ class Renderer(object):
         # Create a scene for each image and render all meshes
         scene = pyrender.Scene(bg_color=bg_color, ambient_light=np.ones(3) * 0)
         # Create camera. Camera will always be at [0,0,0]
-        camera = pyrender.camera.IntrinsicsCamera(fx=self.focal_length, fy=self.focal_length,
-                                                  cx=self.camera_center[0], cy=self.camera_center[1])
+        camera = pyrender.camera.IntrinsicsCamera(
+            fx=self.focal_length,
+            fy=self.focal_length,
+            cx=self.camera_center[0],
+            cy=self.camera_center[1],
+        )
         scene.add(camera, pose=np.eye(4))
 
         # Create light source
@@ -57,15 +61,16 @@ class Renderer(object):
             else:
                 mesh_color = colorsys.hsv_to_rgb(float(n) / num_people, 0.5, 1.0)
             material = pyrender.MetallicRoughnessMaterial(
-                metallicFactor=0.2,
-                alphaMode='OPAQUE',
-                baseColorFactor=mesh_color)
+                metallicFactor=0.2, alphaMode="OPAQUE", baseColorFactor=mesh_color
+            )
             mesh = pyrender.Mesh.from_trimesh(mesh, material=material, wireframe=False)
-            scene.add(mesh, 'mesh')
+            scene.add(mesh, "mesh")
 
         # Alpha channel was not working previously, need to check again
         # Until this is fixed use hack with depth image to get the opacity
-        color_rgba, depth_map = self.renderer.render(scene, flags=pyrender.RenderFlags.RGBA)
+        color_rgba, depth_map = self.renderer.render(
+            scene, flags=pyrender.RenderFlags.RGBA
+        )
         color_rgb = color_rgba[:, :, :3]
         if bg_img_rgb is None:
             return color_rgb
@@ -78,7 +83,9 @@ class Renderer(object):
         centroid = verts.mean(axis=(0, 1))  # n*6890*3 -> 3
         # make the centroid at the image center (the X and Y coordinates are zeros)
         centroid[:2] = 0
-        aroundy = cv2.Rodrigues(np.array([0, np.radians(90.), 0]))[0][np.newaxis, ...]  # 1*3*3
+        aroundy = cv2.Rodrigues(np.array([0, np.radians(90.0), 0]))[0][
+            np.newaxis, ...
+        ]  # 1*3*3
         pred_vert_arr_side = np.matmul((verts - centroid), aroundy) + centroid
         side_view = self.render_front_view(pred_vert_arr_side)
         return side_view

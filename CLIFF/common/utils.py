@@ -38,7 +38,7 @@ def cam_crop2full(crop_cam, center, scale, full_img_shape, focal_length):
     """
     img_h, img_w = full_img_shape[:, 0], full_img_shape[:, 1]
     cx, cy, b = center[:, 0], center[:, 1], scale * 200
-    w_2, h_2 = img_w / 2., img_h / 2.
+    w_2, h_2 = img_w / 2.0, img_h / 2.0
     bs = b * crop_cam[:, 0] + 1e-9
     tz = 2 * focal_length / bs
     tx = (2 * (cx - w_2) / bs) + crop_cam[:, 1]
@@ -48,26 +48,31 @@ def cam_crop2full(crop_cam, center, scale, full_img_shape, focal_length):
 
 
 def video_to_images(vid_file, img_folder=None):
-    command = ['ffmpeg',
-               '-i', vid_file,
-               '-f', 'image2',
-               '-v', 'error',
-               f'{img_folder}/%06d.png']
-    print(f'Running \"{" ".join(command)}\"')
+    command = [
+        "ffmpeg",
+        "-i",
+        vid_file,
+        "-f",
+        "image2",
+        "-v",
+        "error",
+        f"{img_folder}/%06d.png",
+    ]
+    print(f'Running "{" ".join(command)}"')
     subprocess.call(command)
-    print(f'Images saved to \"{img_folder}\"')
+    print(f'Images saved to "{img_folder}"')
 
 
 def images_to_video(img_dir, video_path, frame_rate=30):
-    img_list = glob.glob(os.path.join(img_dir, '*.jpg'))
-    img_list.extend(glob.glob(os.path.join(img_dir, '*.png')))
+    img_list = glob.glob(os.path.join(img_dir, "*.jpg"))
+    img_list.extend(glob.glob(os.path.join(img_dir, "*.png")))
     img_list.sort()
 
     img_exp = cv2.imread(img_list[0])
     rows, cols, ch = img_exp.shape
-    video = cv2.VideoWriter(video_path,
-                            cv2.VideoWriter_fourcc('m', 'p', '4', 'v'),
-                            frame_rate, (cols, rows))
+    video = cv2.VideoWriter(
+        video_path, cv2.VideoWriter_fourcc("m", "p", "4", "v"), frame_rate, (cols, rows)
+    )
 
     for img_path in tqdm(img_list):
         video.write(cv2.imread(img_path))

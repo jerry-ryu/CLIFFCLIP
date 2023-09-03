@@ -24,7 +24,7 @@ class DetectionDataset(Dataset):
         item = {}
 
         img_bgr = self.img_bgr_list[idx]
-        norm_img = (letterbox_image(img_bgr, (self.inp_dim, self.inp_dim)))
+        norm_img = letterbox_image(img_bgr, (self.inp_dim, self.inp_dim))
         norm_img = norm_img[:, :, ::-1].transpose((2, 0, 1)).copy()
         norm_img = norm_img / 255.0
 

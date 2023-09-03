@@ -40,13 +40,16 @@ def main(img_dir, cliffGT_path, smpl_path):
         print("image name:", imgname)
 
         # get mesh vertices using the SMPL model
-        pose = torch.FloatTensor(pose).view(1, -1)      # 1*72
-        shape = torch.FloatTensor(shape).view(1, -1)    # 1*10
-        global_t = torch.FloatTensor(global_t).view(1, -1)    # 1*3
-        smpl_output = smpl_model(betas=shape, pose2rot=True,
-                                 body_pose=pose[:, 3:],
-                                 global_orient=pose[:, :3],
-                                 transl=global_t)
+        pose = torch.FloatTensor(pose).view(1, -1)  # 1*72
+        shape = torch.FloatTensor(shape).view(1, -1)  # 1*10
+        global_t = torch.FloatTensor(global_t).view(1, -1)  # 1*3
+        smpl_output = smpl_model(
+            betas=shape,
+            pose2rot=True,
+            body_pose=pose[:, 3:],
+            global_orient=pose[:, :3],
+            transl=global_t,
+        )
         smpl_vertices = smpl_output.vertices.numpy()
 
         # load the image
@@ -55,9 +58,13 @@ def main(img_dir, cliffGT_path, smpl_path):
         img_h, img_w, _ = np.shape(img)
 
         # setup the render
-        renderer = Renderer(focal_length=focal_l, img_w=img_w, img_h=img_h, faces=smpl_model.faces)
+        renderer = Renderer(
+            focal_length=focal_l, img_w=img_w, img_h=img_h, faces=smpl_model.faces
+        )
         # ------------ render the front view ------------
-        front_view_img = renderer.render_front_view(smpl_vertices, bg_img_rgb=img[:, :, ::-1].copy())
+        front_view_img = renderer.render_front_view(
+            smpl_vertices, bg_img_rgb=img[:, :, ::-1].copy()
+        )
         # ------------ render the side view ------------
         side_view_img = renderer.render_side_view(smpl_vertices)
         # delete the render
@@ -77,8 +84,12 @@ def main(img_dir, cliffGT_path, smpl_path):
                 exit()
             plt.close()
 
-        images = [img[:, :, ::-1], skeleton2d_img[:, :, ::-1],
-                  front_view_img, side_view_img]
+        images = [
+            img[:, :, ::-1],
+            skeleton2d_img[:, :, ::-1],
+            front_view_img,
+            side_view_img,
+        ]
         titles = ["image", "2D skeleton", "front view", "side view"]
         fig = plt.figure()
         for idx, (image, title) in enumerate(zip(images, titles)):
@@ -92,10 +103,10 @@ def main(img_dir, cliffGT_path, smpl_path):
         plt.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--img_dir', help='the image directory')
-    parser.add_argument('--cliffGT_path', help='path to the pseudo-GT file')
+    parser.add_argument("--img_dir", help="the image directory")
+    parser.add_argument("--cliffGT_path", help="path to the pseudo-GT file")
     args = parser.parse_args()
 
     main(args.img_dir, args.cliffGT_path, SMPL_MODEL_DIR)

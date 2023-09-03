@@ -18,8 +18,8 @@ def get_transform(center, scale, res, rot=0):
     t = np.zeros((3, 3))
     t[0, 0] = float(res[1]) / w
     t[1, 1] = float(res[0]) / h
-    t[0, 2] = res[1] * (-float(center[0]) / w + .5)
-    t[1, 2] = res[0] * (-float(center[1]) / h + .5)
+    t[0, 2] = res[1] * (-float(center[0]) / w + 0.5)
+    t[1, 2] = res[0] * (-float(center[1]) / h + 0.5)
     t[2, 2] = 1
     if not rot == 0:
         rot = -rot  # To match direction of rotation from cropping
@@ -44,7 +44,7 @@ def transform(pt, center, scale, res, invert=0, rot=0):
     t = get_transform(center, scale, res, rot=rot)
     if invert:
         t = np.linalg.inv(t)
-    new_pt = np.array([pt[0] - 1, pt[1] - 1, 1.]).T
+    new_pt = np.array([pt[0] - 1, pt[1] - 1, 1.0]).T
     new_pt = np.dot(t, new_pt)
     return np.array([round(new_pt[0]), round(new_pt[1])], dtype=int) + 1
 
@@ -74,7 +74,9 @@ def crop(img, center, scale, res):
     old_x = max(0, ul[0]), min(len(img[0]), br[0])
     old_y = max(0, ul[1]), min(len(img), br[1])
     try:
-        new_img[new_y[0]:new_y[1], new_x[0]:new_x[1]] = img[old_y[0]:old_y[1], old_x[0]:old_x[1]]
+        new_img[new_y[0] : new_y[1], new_x[0] : new_x[1]] = img[
+            old_y[0] : old_y[1], old_x[0] : old_x[1]
+        ]
     except Exception as e:
         print(e)
 
@@ -103,9 +105,12 @@ def bbox_from_detector(bbox, rescale=1.1):
     return center, scale
 
 
-def process_image(orig_img_rgb, bbox,
-                  crop_height=constants.CROP_IMG_HEIGHT,
-                  crop_width=constants.CROP_IMG_WIDTH):
+def process_image(
+    orig_img_rgb,
+    bbox,
+    crop_height=constants.CROP_IMG_HEIGHT,
+    crop_width=constants.CROP_IMG_WIDTH,
+):
     """
     Read image, do preprocessing and possibly crop it according to the bounding box.
     If there are bounding box annotations, use them to crop the image.
@@ -119,12 +124,12 @@ def process_image(orig_img_rgb, bbox,
         height = orig_img_rgb.shape[0]
         width = orig_img_rgb.shape[1]
         center = np.array([width // 2, height // 2])
-        scale = max(height, width * crop_height / float(crop_width)) / 200.
+        scale = max(height, width * crop_height / float(crop_width)) / 200.0
 
     img, ul, br = crop(orig_img_rgb, center, scale, (crop_height, crop_width))
     crop_img = img.copy()
 
-    img = img / 255.
+    img = img / 255.0
     mean = np.array(constants.IMG_NORM_MEAN, dtype=np.float32)
     std = np.array(constants.IMG_NORM_STD, dtype=np.float32)
     norm_img = (img - mean) / std
@@ -145,6 +150,6 @@ def rot6d_to_rotmat(x):
     a1 = x[:, :, 0]
     a2 = x[:, :, 1]
     b1 = F.normalize(a1)
-    b2 = F.normalize(a2 - torch.einsum('bi,bi->b', b1, a2).unsqueeze(-1) * b1)
+    b2 = F.normalize(a2 - torch.einsum("bi,bi->b", b1, a2).unsqueeze(-1) * b1)
     b3 = torch.cross(b1, b2)
     return torch.stack((b1, b2, b3), dim=-1)
