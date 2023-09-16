@@ -10,6 +10,7 @@ from os.path import join
 import config
 import constants
 from utils.imutils import crop, flip_img, flip_pose, flip_kp, transform, rot_aa
+from common.utils import estimate_focal_length
 
 
 class BaseDataset(Dataset):
@@ -52,8 +53,8 @@ class BaseDataset(Dataset):
 
         # Get gt SMPL parameters, if available
         try:
-            self.pose = self.data["pose"].astype(np.float)
-            self.betas = self.data["shape"].astype(np.float)
+            self.pose = self.data["pose"].astype(np.float32)
+            self.betas = self.data["shape"].astype(np.float32)
             if "has_smpl" in self.data:
                 self.has_smpl = self.data["has_smpl"]
             else:
@@ -96,14 +97,14 @@ class BaseDataset(Dataset):
 
     def augm_params(self):
         """Get augmentation parameters."""
-        flip = 0  # flipping
+        flip = False  # flipping
         pn = np.ones(3)  # per channel pixel-noise
         rot = 0  # rotation
         sc = 1  # scaling
         if self.is_train:
             # We flip with probability 1/2
             if np.random.uniform() <= 0.5:
-                flip = 1
+                flip = True
 
             # Each channel is multiplied with a number
             # in the area [1-opt.noiseFactor,1+opt.noiseFactor]
@@ -162,7 +163,7 @@ class BaseDataset(Dataset):
                 [constants.IMG_RES, constants.IMG_RES],
                 rot=r,
             )
-        # convert to normalized coordinates
+        # convert to normalized coordinates [-1,1]
         kp[:, :-1] = 2.0 * kp[:, :-1] / constants.IMG_RES - 1.0
         # flip the x coordinates
         if f:
@@ -206,6 +207,7 @@ class BaseDataset(Dataset):
         flip, pn, rot, sc = self.augm_params()
 
         # Load image
+        cv2.setNumThreads(0)
         imgname = join(self.img_dir, self.imgname[index])
         try:
             img = cv2.imread(imgname)[:, :, ::-1].copy().astype(np.float32)
@@ -225,7 +227,9 @@ class BaseDataset(Dataset):
 
         # Process image
         img = self.rgb_processing(img, center, sc * scale, rot, flip, pn)
+        img_h, img_w, _ = img.shape
         img = torch.from_numpy(img).float()
+
         # Store image before normalization to use it in visualization
         item["img"] = self.normalize_img(img)
         item["pose"] = torch.from_numpy(self.pose_processing(pose, rot, flip)).float()
@@ -257,6 +261,11 @@ class BaseDataset(Dataset):
         item["gender"] = self.gender[index]
         item["sample_index"] = index
         item["dataset_name"] = self.dataset
+        item["focal_length"] = estimate_focal_length(
+            orig_shape[1], orig_shape[0]
+        ).astype(np.float32)
+        item["img_h"] = orig_shape[1].astype(np.float32)
+        item["img_w"] = orig_shape[0].astype(np.float32)
 
         try:
             item["maskname"] = self.maskname[index]

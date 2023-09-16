@@ -1,3 +1,5 @@
 # dataset
 cliffGT_v1/
 data/
+CLIFF/models/backbones/hrnet/pretrained/
+*.pyc

@@ -11,7 +11,7 @@ fi
 
 if true; then
 python demo.py --ckpt ${CKPT_PATH} --backbone ${BACKBONE} \
-               --input_path data/test_samples/crowdpose_100024.jpg \
+               --input_path /mnt/RG/data/h36m/images/s_01_act_02_subact_01_ca_01/s_01_act_02_subact_01_ca_01_000001.jpg \
                --input_type image \
                --show_bbox --show_sideView --save_results
 fi

@@ -26,12 +26,15 @@ from models.backbones.hrnet.hrnet_config import update_config
 
 
 class CLIFF(nn.Module):
-    """ SMPL Iterative Regressor with ResNet50 backbone"""
+    """SMPL Iterative Regressor with ResNet50 backbone"""
 
     def __init__(self, smpl_mean_params, img_feat_num=2048):
         super(CLIFF, self).__init__()
         curr_dir = osp.dirname(osp.abspath(__file__))
-        config_file = osp.join(curr_dir, "../backbones/hrnet/models/cls_hrnet_w48_sgd_lr5e-2_wd1e-4_bs32_x100.yaml")
+        config_file = osp.join(
+            curr_dir,
+            "../backbones/hrnet/models/cls_hrnet_w48_sgd_lr5e-2_wd1e-4_bs32_x100.yaml",
+        )
         update_config(cfg, config_file)
         self.encoder = HighResolutionNet(cfg)
 
@@ -61,20 +64,31 @@ class CLIFF(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.weight.data.normal_(0, math.sqrt(2.0 / n))
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
         mean_params = np.load(smpl_mean_params)
-        init_pose = torch.from_numpy(mean_params['pose'][:]).unsqueeze(0)
-        init_shape = torch.from_numpy(mean_params['shape'][:].astype('float32')).unsqueeze(0)
-        init_cam = torch.from_numpy(mean_params['cam']).unsqueeze(0)
-        self.register_buffer('init_pose', init_pose)
-        self.register_buffer('init_shape', init_shape)
-        self.register_buffer('init_cam', init_cam)
+        init_pose = torch.from_numpy(mean_params["pose"][:]).unsqueeze(0)
+        init_shape = torch.from_numpy(
+            mean_params["shape"][:].astype("float32")
+        ).unsqueeze(0)
+        init_cam = torch.from_numpy(mean_params["cam"]).unsqueeze(0)
+        self.register_buffer("init_pose", init_pose)
+        self.register_buffer("init_shape", init_shape)
+        self.register_buffer("init_cam", init_cam)
 
-    def forward(self, x, bbox, init_pose=None, init_shape=None, init_cam=None, n_iter=3):
+        self.encoder.load_state_dict(
+            torch.load(
+                "/mnt/RG/CLIFFCLIP/CLIFF/models/backbones/hrnet/pretrained/HRNet_W48_C_ssld_pretrained.pth"
+            ),
+            strict=False,
+        )
+
+    def forward(
+        self, x, bbox, init_pose=None, init_shape=None, init_cam=None, n_iter=3
+    ):
         batch_size = x.shape[0]
         if init_pose is None:
             init_pose = self.init_pose.expand(batch_size, -1)

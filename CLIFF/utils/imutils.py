@@ -76,7 +76,7 @@ def crop(img, center, scale, res, rot=0):
 
     if not rot == 0:
         # Remove padding
-        new_img = scipy.misc.imrotate(new_img, rot)
+        new_img = scipy.ndimage.interpolation.rotate(new_img, rot)
         new_img = new_img[pad:-pad, pad:-pad]
     # h_, w_  = new_img.shape[1:3] * res
     # print(new_img.shape, res)

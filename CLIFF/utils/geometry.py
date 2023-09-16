@@ -114,7 +114,6 @@ def estimate_translation_np(S, joints_2d, joints_conf, focal_length=5000, img_si
     Returns:
         (3,) camera translation vector
     """
-
     num_joints = S.shape[0]
     # focal length
     f = np.array([focal_length, focal_length])
@@ -127,7 +126,6 @@ def estimate_translation_np(S, joints_2d, joints_conf, focal_length=5000, img_si
     O = np.tile(center, num_joints)
     F = np.tile(f, num_joints)
     weight2 = np.reshape(np.tile(np.sqrt(joints_conf), (2, 1)).T, -1)
-
     # least squares
     Q = np.array(
         [
@@ -164,17 +162,20 @@ def estimate_translation(S, joints_2d, focal_length=5000.0, img_size=224.0):
 
     device = S.device
     # Use only joints 25:49 (GT joints)
-    S = S[:, 25:, :].cpu().numpy()
-    joints_2d = joints_2d[:, 25:, :].cpu().numpy()
+    S = S[:, 25:, :].cpu().detach().numpy()
+    joints_2d = joints_2d[:, 25:, :].cpu().detach().numpy()
     joints_conf = joints_2d[:, :, -1]
     joints_2d = joints_2d[:, :, :-1]
+    # focal_length = focal_length.cpu().detach().numpy()
     trans = np.zeros((S.shape[0], 3), dtype=np.float32)
     # Find the translation for each example in the batch
     for i in range(S.shape[0]):
         S_i = S[i]
         joints_i = joints_2d[i]
         conf_i = joints_conf[i]
+        focal_length_i = focal_length
+
         trans[i] = estimate_translation_np(
-            S_i, joints_i, conf_i, focal_length=focal_length, img_size=img_size
+            S_i, joints_i, conf_i, focal_length=focal_length_i, img_size=img_size
         )
     return torch.from_numpy(trans).to(device)

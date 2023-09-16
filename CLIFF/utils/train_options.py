@@ -55,7 +55,7 @@ class TrainOptions:
         train.add_argument(
             "--num_epochs", type=int, default=50, help="Total number of training epochs"
         )
-        train.add_argument("--lr", type=float, default=5e-5, help="Learning rate")
+        train.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
         train.add_argument("--batch_size", type=int, default=64, help="Batch size")
         train.add_argument(
             "--summary_steps", type=int, default=100, help="Summary saving frequency"

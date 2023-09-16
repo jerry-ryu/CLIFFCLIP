@@ -180,6 +180,29 @@ def main(args):
             smpl_joints.extend(pred_output.joints.cpu().numpy())
             cam_focal_l.extend(focal_length.cpu().numpy())
 
+            #########################
+            from utils.geometry import batch_rodrigues, perspective_projection
+
+            batch_size = min(args.batch_size, len(detection_all))
+
+            pred_joints = pred_output.joints
+            print(pred_joints.shape)
+            camera_center = torch.zeros(batch_size, 2, device=device)
+            pred_keypoints_2d = perspective_projection(
+                pred_joints,
+                rotation=torch.eye(3, device=device)
+                .unsqueeze(0)
+                .expand(batch_size, -1, -1),
+                translation=pred_cam_full,
+                focal_length=focal_length,
+                camera_center=camera_center,
+            )
+            print(pred_keypoints_2d)
+            print(pred_keypoints_2d.shape)
+            print(center)
+
+            #########################
+
     if args.save_results:
         print(f'Save results to "{result_filepath}"')
         np.savez(
